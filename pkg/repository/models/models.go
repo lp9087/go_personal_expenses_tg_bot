@@ -9,6 +9,6 @@ type CategoryName struct {
 type Expenses struct {
 	ID         uint
 	CategoryID int
-	Category   CategoryName
+	Category   CategoryName `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	Amount     int
 }

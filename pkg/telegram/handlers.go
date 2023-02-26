@@ -14,6 +14,9 @@ func (b *Bot) handleCommand(update tgbotapi.Update, updates tgbotapi.UpdatesChan
 	switch update.CallbackQuery.Data {
 	case "addCategory":
 		b.service.createCategory(b, update, updates)
+	case "deleteCategory":
+		b.service.deleteCategory(b, update, updates)
+
 	case "createExpenses":
 		b.service.createExpenses(b, update, updates)
 
@@ -29,6 +32,7 @@ func (b *Bot) handleCommand(update tgbotapi.Update, updates tgbotapi.UpdatesChan
 		msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Выберите действие:")
 		msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup([]tgbotapi.InlineKeyboardButton{
 			tgbotapi.NewInlineKeyboardButtonData("Добавить категорию", "addCategory"),
+			tgbotapi.NewInlineKeyboardButtonData("Удалить категорию", "deleteCategory"),
 			tgbotapi.NewInlineKeyboardButtonData("Мои категории", "myCategories"),
 			tgbotapi.NewInlineKeyboardButtonData("Назад", "mainPage"),
 		})

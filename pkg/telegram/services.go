@@ -29,6 +29,41 @@ func (c *Service) createCategory(client *Bot, update tgbotapi.Update, updates tg
 	}
 }
 
+func (c *Service) deleteCategory(client *Bot, update tgbotapi.Update, updates tgbotapi.UpdatesChannel) {
+	msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Выберите категорию:")
+	var categories []models.CategoryName
+	ownerQuery := update.CallbackQuery.From.UserName + update.CallbackQuery.From.FirstName + update.CallbackQuery.From.LastName
+	c.db.Where("owner = ?", ownerQuery).Find(&categories)
+
+	buttons := c.getCategoriesButtons(update)
+
+	categoriesKeyboard := tgbotapi.NewInlineKeyboardMarkup(buttons...)
+
+	msg.ReplyMarkup = categoriesKeyboard
+	msg.ReplyToMessageID = update.CallbackQuery.Message.MessageID
+	client.bot.Send(msg)
+
+	category := <-updates
+	var CategoryID int
+	var categoryError error
+	if category.CallbackQuery != nil {
+		CategoryID, categoryError = strconv.Atoi(category.CallbackQuery.Data)
+		if categoryError != nil {
+			msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Действие отменено")
+			client.bot.Send(msg)
+
+			msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Главное меню")
+			msg.ReplyMarkup = mainKeyboard
+			client.bot.Send(msg)
+			return
+		}
+	}
+	//var toDelete models.CategoryName
+	c.db.Where("id = ?", CategoryID).Delete(&models.CategoryName{})
+	resMsg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Вы успешно удалили категорию")
+	client.bot.Send(resMsg)
+}
+
 func (c *Service) createExpenses(client *Bot, update tgbotapi.Update, updates tgbotapi.UpdatesChannel) {
 	msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Выберите категорию:")
 	var categories []models.CategoryName
