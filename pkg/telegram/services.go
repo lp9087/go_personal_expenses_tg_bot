@@ -8,12 +8,6 @@ import (
 	"tg_bot_expenses/pkg/repository/models"
 )
 
-type ServiceInterface interface {
-	createCategory(client *Bot, update tgbotapi.Update, updates tgbotapi.UpdatesChannel)
-	createExpenses(client *Bot, update tgbotapi.Update, updates tgbotapi.UpdatesChannel)
-	getCategories(client *Bot, update tgbotapi.Update, updates tgbotapi.UpdatesChannel)
-}
-
 type Service struct {
 	db *gorm.DB
 }
@@ -41,16 +35,10 @@ func (c *Service) createExpenses(client *Bot, update tgbotapi.Update, updates tg
 	ownerQuery := update.CallbackQuery.From.UserName + update.CallbackQuery.From.FirstName + update.CallbackQuery.From.LastName
 	c.db.Where("owner = ?", ownerQuery).Find(&categories)
 
-	var buttons []tgbotapi.InlineKeyboardButton
-	for _, category := range categories {
-		button := tgbotapi.NewInlineKeyboardButtonData(category.Name, fmt.Sprintf("%v", category.ID))
-		buttons = append(buttons, button)
-	}
+	buttons := c.getCategoriesButtons(update)
 
-	backButton := tgbotapi.NewInlineKeyboardButtonData("Назад", "mainPage")
-	buttons = append(buttons, backButton)
+	categoriesKeyboard := tgbotapi.NewInlineKeyboardMarkup(buttons...)
 
-	categoriesKeyboard := tgbotapi.NewInlineKeyboardMarkup(buttons)
 	msg.ReplyMarkup = categoriesKeyboard
 	msg.ReplyToMessageID = update.CallbackQuery.Message.MessageID
 	client.bot.Send(msg)
@@ -83,15 +71,27 @@ func (c *Service) createExpenses(client *Bot, update tgbotapi.Update, updates tg
 	client.bot.Send(resMsg)
 }
 
-func (c *Service) getCategories(client *Bot, update tgbotapi.Update, updates tgbotapi.UpdatesChannel) {
+func (c *Service) getCategories(client *Bot, update tgbotapi.Update) {
+
+	buttons := c.getCategoriesButtons(update)
+
+	categoriesKeyboard := tgbotapi.NewInlineKeyboardMarkup(buttons...)
+
+	msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Ваши категории")
+	msg.ReplyMarkup = categoriesKeyboard
+	client.bot.Send(msg)
+}
+
+func (c *Service) getCategoriesButtons(update tgbotapi.Update) [][]tgbotapi.InlineKeyboardButton {
 	var categories []models.CategoryName
+	var buttons [][]tgbotapi.InlineKeyboardButton
+
 	if update.CallbackQuery != nil {
 		ownerQuery := update.CallbackQuery.From.UserName + update.CallbackQuery.From.FirstName + update.CallbackQuery.From.LastName
 		c.db.Where("owner = ?", ownerQuery).Find(&categories)
 
-		var buttons [][]tgbotapi.InlineKeyboardButton
 		for _, category := range categories {
-			button := tgbotapi.NewInlineKeyboardButtonData(category.Name, fmt.Sprintf("category:%v", category.ID))
+			button := tgbotapi.NewInlineKeyboardButtonData(category.Name, fmt.Sprintf("%v", category.ID))
 			row := []tgbotapi.InlineKeyboardButton{button}
 			buttons = append(buttons, row)
 		}
@@ -99,13 +99,8 @@ func (c *Service) getCategories(client *Bot, update tgbotapi.Update, updates tgb
 		backButton := tgbotapi.NewInlineKeyboardButtonData("Назад", "mainPage")
 		row := []tgbotapi.InlineKeyboardButton{backButton}
 		buttons = append(buttons, row)
-
-		categoriesKeyboard := tgbotapi.NewInlineKeyboardMarkup(buttons...)
-
-		msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Ваши категории")
-		msg.ReplyMarkup = categoriesKeyboard
-		client.bot.Send(msg)
 	}
+	return buttons
 }
 
 func NewService(db *gorm.DB) *Service {

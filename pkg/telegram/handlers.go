@@ -18,7 +18,7 @@ func (b *Bot) handleCommand(update tgbotapi.Update, updates tgbotapi.UpdatesChan
 		b.service.createExpenses(b, update, updates)
 
 	case "myCategories":
-		b.service.getCategories(b, update, updates)
+		b.service.getCategories(b, update)
 
 	case "mainPage":
 		msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Список команд")
