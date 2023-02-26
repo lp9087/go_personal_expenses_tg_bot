@@ -49,12 +49,7 @@ func (c *Service) deleteCategory(client *Bot, update tgbotapi.Update, updates tg
 	if category.CallbackQuery != nil {
 		CategoryID, categoryError = strconv.Atoi(category.CallbackQuery.Data)
 		if categoryError != nil {
-			msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Действие отменено")
-			client.bot.Send(msg)
-
-			msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Главное меню")
-			msg.ReplyMarkup = mainKeyboard
-			client.bot.Send(msg)
+			c.cancelAction(client, update)
 			return
 		}
 	}

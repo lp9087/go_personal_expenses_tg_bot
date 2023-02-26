@@ -34,7 +34,7 @@ func main() {
 
 	db.AutoMigrate(&models.CategoryName{}, &models.Expenses{})
 
-	bot, err := tgbotapi.NewBotAPI("5806902616:AAEbGoKlc8oukusym8YDNAXHvDoBvg1noxc")
+	bot, err := tgbotapi.NewBotAPI(os.Getenv("TG_TOKEN"))
 	if err != nil {
 		log.Panic(err)
 	}
