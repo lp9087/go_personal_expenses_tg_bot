@@ -89,16 +89,18 @@ func (c *Service) getCategories(client *Bot, update tgbotapi.Update, updates tgb
 		ownerQuery := update.CallbackQuery.From.UserName + update.CallbackQuery.From.FirstName + update.CallbackQuery.From.LastName
 		c.db.Where("owner = ?", ownerQuery).Find(&categories)
 
-		var buttons []tgbotapi.InlineKeyboardButton
+		var buttons [][]tgbotapi.InlineKeyboardButton
 		for _, category := range categories {
 			button := tgbotapi.NewInlineKeyboardButtonData(category.Name, fmt.Sprintf("category:%v", category.ID))
-			buttons = append(buttons, button)
+			row := []tgbotapi.InlineKeyboardButton{button}
+			buttons = append(buttons, row)
 		}
 
 		backButton := tgbotapi.NewInlineKeyboardButtonData("Назад", "mainPage")
-		buttons = append(buttons, backButton)
+		row := []tgbotapi.InlineKeyboardButton{backButton}
+		buttons = append(buttons, row)
 
-		categoriesKeyboard := tgbotapi.NewInlineKeyboardMarkup(buttons)
+		categoriesKeyboard := tgbotapi.NewInlineKeyboardMarkup(buttons...)
 
 		msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Ваши категории")
 		msg.ReplyMarkup = categoriesKeyboard
