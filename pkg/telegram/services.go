@@ -84,14 +84,12 @@ func (c *Service) createExpenses(client *Bot, update tgbotapi.Update, updates tg
 	if category.CallbackQuery != nil {
 		CategoryID, categoryError = strconv.Atoi(category.CallbackQuery.Data)
 		if categoryError != nil {
-			msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Действие отменено")
-			client.bot.Send(msg)
-
-			msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Главное меню")
-			msg.ReplyMarkup = mainKeyboard
-			client.bot.Send(msg)
+			c.cancelAction(client, update)
 			return
 		}
+	} else {
+		c.cancelAction(client, update)
+		return
 	}
 
 	amountMsg := tgbotapi.NewMessage(category.CallbackQuery.Message.Chat.ID, fmt.Sprintf("Введите сумму расхода:"))
@@ -104,6 +102,38 @@ func (c *Service) createExpenses(client *Bot, update tgbotapi.Update, updates tg
 	c.db.Create(&expenses)
 	resMsg := tgbotapi.NewMessage(amount.Message.Chat.ID, fmt.Sprintf("Вы создали расходю ID в БД: %v", expenses.ID))
 	client.bot.Send(resMsg)
+}
+
+func (c *Service) getExpenses(client *Bot, update tgbotapi.Update) {
+
+	type ExpenseWithCategoryName struct {
+		Amount float64
+		Name   string
+	}
+
+	var expenses []ExpenseWithCategoryName
+
+	if update.CallbackQuery != nil {
+		ownerQuery := update.CallbackQuery.From.UserName + update.CallbackQuery.From.FirstName + update.CallbackQuery.From.LastName
+		c.db.Model(&models.Expenses{}).
+			Select("expenses.amount, category_names.name").
+			Joins("left join category_names on category_names.id = expenses.category_id").
+			Where("category_names.owner = ?", ownerQuery).
+			Find(&expenses)
+
+		var buttons [][]tgbotapi.InlineKeyboardButton
+		for _, consumption := range expenses {
+			button := tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("Категория: %v | Количество: %v", consumption.Name, consumption.Amount), "Ваши расходы")
+			row := []tgbotapi.InlineKeyboardButton{button}
+			buttons = append(buttons, row)
+		}
+
+		categoriesKeyboard := tgbotapi.NewInlineKeyboardMarkup(buttons...)
+
+		msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Ваши расходы")
+		msg.ReplyMarkup = categoriesKeyboard
+		client.bot.Send(msg)
+	}
 }
 
 func (c *Service) getCategories(client *Bot, update tgbotapi.Update) {
@@ -136,6 +166,15 @@ func (c *Service) getCategoriesButtons(update tgbotapi.Update) [][]tgbotapi.Inli
 		buttons = append(buttons, row)
 	}
 	return buttons
+}
+
+func (c *Service) cancelAction(client *Bot, update tgbotapi.Update) {
+	msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Действие отменено")
+	client.bot.Send(msg)
+
+	msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Главное меню")
+	msg.ReplyMarkup = mainKeyboard
+	client.bot.Send(msg)
 }
 
 func NewService(db *gorm.DB) *Service {

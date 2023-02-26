@@ -14,11 +14,15 @@ func (b *Bot) handleCommand(update tgbotapi.Update, updates tgbotapi.UpdatesChan
 	switch update.CallbackQuery.Data {
 	case "addCategory":
 		b.service.createCategory(b, update, updates)
+
 	case "deleteCategory":
 		b.service.deleteCategory(b, update, updates)
 
 	case "createExpenses":
 		b.service.createExpenses(b, update, updates)
+
+	case "getExpenses":
+		b.service.getExpenses(b, update)
 
 	case "myCategories":
 		b.service.getCategories(b, update)
@@ -29,20 +33,34 @@ func (b *Bot) handleCommand(update tgbotapi.Update, updates tgbotapi.UpdatesChan
 		b.bot.Send(msg)
 
 	case "workWithCategories":
+
 		msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Выберите действие:")
-		msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup([]tgbotapi.InlineKeyboardButton{
-			tgbotapi.NewInlineKeyboardButtonData("Добавить категорию", "addCategory"),
-			tgbotapi.NewInlineKeyboardButtonData("Удалить категорию", "deleteCategory"),
-			tgbotapi.NewInlineKeyboardButtonData("Мои категории", "myCategories"),
-			tgbotapi.NewInlineKeyboardButtonData("Назад", "mainPage"),
-		})
+		msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup([][]tgbotapi.InlineKeyboardButton{
+			[]tgbotapi.InlineKeyboardButton{
+				tgbotapi.NewInlineKeyboardButtonData("Добавить категорию", "addCategory"),
+			},
+			[]tgbotapi.InlineKeyboardButton{
+				tgbotapi.NewInlineKeyboardButtonData("Удалить категорию", "deleteCategory"),
+			},
+			[]tgbotapi.InlineKeyboardButton{
+				tgbotapi.NewInlineKeyboardButtonData("Мои категории", "myCategories"),
+			},
+			[]tgbotapi.InlineKeyboardButton{
+				tgbotapi.NewInlineKeyboardButtonData("Назад", "mainPage"),
+			},
+		}...)
 		b.bot.Send(msg)
 
 	case "workWithExpenses":
 		msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Выберите действие:")
-		msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup([]tgbotapi.InlineKeyboardButton{
-			tgbotapi.NewInlineKeyboardButtonData("Добавить расход", "createExpenses"),
-		})
+		msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup([][]tgbotapi.InlineKeyboardButton{
+			[]tgbotapi.InlineKeyboardButton{
+				tgbotapi.NewInlineKeyboardButtonData("Добавить расход", "createExpenses"),
+			},
+			[]tgbotapi.InlineKeyboardButton{
+				tgbotapi.NewInlineKeyboardButtonData("Мои расходы", "getExpenses"),
+			},
+		}...)
 		b.bot.Send(msg)
 	}
 }
