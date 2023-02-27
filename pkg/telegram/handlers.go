@@ -24,6 +24,9 @@ func (b *Bot) handleCommand(update tgbotapi.Update, updates tgbotapi.UpdatesChan
 	case "getExpenses":
 		b.service.getExpenses(b, update)
 
+	case "deleteExpense":
+		b.service.deleteExpense(b, update, updates)
+
 	case "myCategories":
 		b.service.getCategories(b, update)
 
@@ -59,6 +62,9 @@ func (b *Bot) handleCommand(update tgbotapi.Update, updates tgbotapi.UpdatesChan
 			},
 			[]tgbotapi.InlineKeyboardButton{
 				tgbotapi.NewInlineKeyboardButtonData("Мои расходы", "getExpenses"),
+			},
+			[]tgbotapi.InlineKeyboardButton{
+				tgbotapi.NewInlineKeyboardButtonData("Удалить расход", "deleteExpense"),
 			},
 		}...)
 		b.bot.Send(msg)
