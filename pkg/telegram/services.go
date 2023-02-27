@@ -4,6 +4,7 @@ import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"gorm.io/gorm"
+	"log"
 	"strconv"
 	"tg_bot_expenses/pkg/repository/models"
 )
@@ -15,7 +16,9 @@ type Service struct {
 func (c *Service) createCategory(client *Bot, update tgbotapi.Update, updates tgbotapi.UpdatesChannel) {
 	msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Вы выбрали добавить категорию. Введите название: ")
 	msg.ReplyToMessageID = update.CallbackQuery.Message.MessageID
-	client.bot.Send(msg)
+	if _, err := client.bot.Send(msg); err != nil {
+		log.Fatalf("Ошибка отправки сообщения. Текст ошибки: %s", err)
+	}
 
 	// Ожидаем ответа пользователя
 	update = <-updates
@@ -25,7 +28,9 @@ func (c *Service) createCategory(client *Bot, update tgbotapi.Update, updates tg
 		category := &models.CategoryName{Name: update.Message.Text, Owner: owner}
 		c.db.Create(&category)
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("Вы ввели название категории: %s. ID в БД: %v", update.Message.Text, category.ID))
-		client.bot.Send(msg)
+		if _, err := client.bot.Send(msg); err != nil {
+			log.Fatalf("Ошибка отправки сообщения. Текст ошибки: %s", err)
+		}
 	}
 }
 
@@ -41,7 +46,9 @@ func (c *Service) deleteCategory(client *Bot, update tgbotapi.Update, updates tg
 
 	msg.ReplyMarkup = categoriesKeyboard
 	msg.ReplyToMessageID = update.CallbackQuery.Message.MessageID
-	client.bot.Send(msg)
+	if _, err := client.bot.Send(msg); err != nil {
+		log.Fatalf("Ошибка отправки сообщения. Текст ошибки: %s", err)
+	}
 
 	category := <-updates
 	var CategoryID int
@@ -56,7 +63,9 @@ func (c *Service) deleteCategory(client *Bot, update tgbotapi.Update, updates tg
 	//var toDelete models.CategoryName
 	c.db.Where("id = ?", CategoryID).Delete(&models.CategoryName{})
 	resMsg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Вы успешно удалили категорию")
-	client.bot.Send(resMsg)
+	if _, err := client.bot.Send(resMsg); err != nil {
+		log.Fatalf("Ошибка отправки сообщения. Текст ошибки: %s", err)
+	}
 }
 
 func (c *Service) createExpenses(client *Bot, update tgbotapi.Update, updates tgbotapi.UpdatesChannel) {
@@ -71,7 +80,9 @@ func (c *Service) createExpenses(client *Bot, update tgbotapi.Update, updates tg
 
 	msg.ReplyMarkup = categoriesKeyboard
 	msg.ReplyToMessageID = update.CallbackQuery.Message.MessageID
-	client.bot.Send(msg)
+	if _, err := client.bot.Send(msg); err != nil {
+		log.Fatalf("Ошибка отправки сообщения. Текст ошибки: %s", err)
+	}
 
 	category := <-updates
 	var CategoryID int
@@ -89,14 +100,18 @@ func (c *Service) createExpenses(client *Bot, update tgbotapi.Update, updates tg
 
 	amountMsg := tgbotapi.NewMessage(category.CallbackQuery.Message.Chat.ID, fmt.Sprintf("Введите сумму расхода:"))
 	amountMsg.ReplyToMessageID = update.CallbackQuery.Message.MessageID
-	client.bot.Send(amountMsg)
+	if _, err := client.bot.Send(amountMsg); err != nil {
+		log.Fatalf("Ошибка отправки сообщения. Текст ошибки: %s", err)
+	}
 
 	amount := <-updates
 	value, _ := strconv.Atoi(amount.Message.Text)
 	expenses := &models.Expenses{CategoryID: CategoryID, Amount: value}
 	c.db.Create(&expenses)
 	resMsg := tgbotapi.NewMessage(amount.Message.Chat.ID, fmt.Sprintf("Вы создали расходю ID в БД: %v", expenses.ID))
-	client.bot.Send(resMsg)
+	if _, err := client.bot.Send(resMsg); err != nil {
+		log.Fatalf("Ошибка отправки сообщения. Текст ошибки: %s", err)
+	}
 }
 
 func (c *Service) getExpenses(client *Bot, update tgbotapi.Update) {
@@ -117,6 +132,11 @@ func (c *Service) getExpenses(client *Bot, update tgbotapi.Update) {
 			Find(&expenses)
 
 		var buttons [][]tgbotapi.InlineKeyboardButton
+		if len(expenses) == 0 {
+			button := tgbotapi.NewInlineKeyboardButtonData("Расходы отсутствуют", "Ваши расходы")
+			row := []tgbotapi.InlineKeyboardButton{button}
+			buttons = append(buttons, row)
+		}
 		for _, consumption := range expenses {
 			button := tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("Категория: %v | Количество: %v", consumption.Name, consumption.Amount), "Ваши расходы")
 			row := []tgbotapi.InlineKeyboardButton{button}
@@ -127,7 +147,9 @@ func (c *Service) getExpenses(client *Bot, update tgbotapi.Update) {
 
 		msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Ваши расходы")
 		msg.ReplyMarkup = categoriesKeyboard
-		client.bot.Send(msg)
+		if _, err := client.bot.Send(msg); err != nil {
+			log.Fatalf("Ошибка отправки сообщения. Текст ошибки: %s", err)
+		}
 	}
 }
 
@@ -139,7 +161,9 @@ func (c *Service) getCategories(client *Bot, update tgbotapi.Update) {
 
 	msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Ваши категории")
 	msg.ReplyMarkup = categoriesKeyboard
-	client.bot.Send(msg)
+	if _, err := client.bot.Send(msg); err != nil {
+		log.Fatalf("Ошибка отправки сообщения. Текст ошибки: %s", err)
+	}
 }
 
 func (c *Service) getCategoriesButtons(update tgbotapi.Update) [][]tgbotapi.InlineKeyboardButton {
@@ -165,11 +189,15 @@ func (c *Service) getCategoriesButtons(update tgbotapi.Update) [][]tgbotapi.Inli
 
 func (c *Service) cancelAction(client *Bot, update tgbotapi.Update) {
 	msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Действие отменено")
-	client.bot.Send(msg)
+	if _, err := client.bot.Send(msg); err != nil {
+		log.Fatalf("Ошибка отправки сообщения. Текст ошибки: %s", err)
+	}
 
 	msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Главное меню")
 	msg.ReplyMarkup = mainKeyboard
-	client.bot.Send(msg)
+	if _, err := client.bot.Send(msg); err != nil {
+		log.Fatalf("Ошибка отправки сообщения. Текст ошибки: %s", err)
+	}
 }
 
 func NewService(db *gorm.DB) *Service {
